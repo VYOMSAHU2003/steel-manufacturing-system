@@ -155,7 +155,7 @@ The **Steel Manufacturing Plant Management System** is a full-stack enterprise s
 
 ```bash
 # 1️⃣ Clone the repository
-git clone https://github.com/yourusername/steel-manufacturing-system.git
+git clone https://github.com/VYOMSAHU2003/steel-manufacturing-system.git
 cd steel-manufacturing-system
 
 # 2️⃣ Create virtual environment
@@ -405,9 +405,9 @@ git push origin feature/amazing-feature
 
 Found a bug? Have a suggestion?
 
-1. 🔍 **Check existing [Issues](https://github.com/yourusername/steel-manufacturing-system/issues)**
-2. 🆕 **Create a [New Issue](https://github.com/yourusername/steel-manufacturing-system/issues/new)**
-3. 💬 **Join our [Discussions](https://github.com/yourusername/steel-manufacturing-system/discussions)**
+1. 🔍 **Check existing [Issues](https://github.com/VYOMSAHU2003/steel-manufacturing-system/issues)**
+2. 🆕 **Create a [New Issue](https://github.com/VYOMSAHU2003/steel-manufacturing-system/issues/new)**
+3. 💬 **Join our [Discussions](https://github.com/VYOMSAHU2003/steel-manufacturing-system/discussions)**
 
 ## 📄 License
 
@@ -419,9 +419,9 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 **Vyom Sahu**
 
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/yourusername)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/yourprofile)
-[![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:your.email@example.com)
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/VYOMSAHU2003)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/vyom-sahu)
+[![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:vyomsahu2003@gmail.com)
 
 </div>
 
