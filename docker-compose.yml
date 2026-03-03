@@ -1,0 +1,122 @@
+version: '3.8'
+
+services:
+  # Main Streamlit Application
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      # Database Configuration
+      - ORACLE_HOST=${ORACLE_HOST:-localhost}
+      - ORACLE_PORT=${ORACLE_PORT:-1521}
+      - ORACLE_SERVICE_NAME=${ORACLE_SERVICE_NAME:-ORCL}
+      - ORACLE_USER=${ORACLE_USER:-steel_admin}
+      - ORACLE_PASSWORD=${ORACLE_PASSWORD}
+      
+      # Application Configuration
+      - DEBUG_MODE=${DEBUG_MODE:-false}
+      - APP_NAME=Steel Manufacturing System
+      - APP_VERSION=1.0.0
+      
+    volumes:
+      # Persist database file for SQLite
+      - ./data:/app/data
+      # Persist logs
+      - ./logs:/app/logs
+    networks:
+      - steel-network
+    restart: unless-stopped
+    depends_on:
+      - oracle-db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Oracle Database (Optional - for production)
+  oracle-db:
+    image: container-registry.oracle.com/database/express:latest
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    environment:
+      - ORACLE_PWD=${ORACLE_ROOT_PASSWORD}
+      - ORACLE_CHARACTERSET=AL32UTF8
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+      - ./scripts/oracle-init:/docker-entrypoint-initdb.d
+    networks:
+      - steel-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy (Optional - for production)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - app
+    networks:
+      - steel-network
+    restart: unless-stopped
+
+  # Redis Cache (Optional - for session management)
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - steel-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # Monitoring with Prometheus (Optional)
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - steel-network
+    restart: unless-stopped
+
+  # Grafana for Dashboards (Optional)
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - steel-network
+    restart: unless-stopped
+
+# Networks
+networks:
+  steel-network:
+    driver: bridge
+
+# Volumes
+volumes:
+  oracle-data:
+    driver: local
+  redis-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
