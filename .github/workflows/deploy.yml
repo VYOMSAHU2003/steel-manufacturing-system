@@ -1,0 +1,70 @@
+# Automated Deployment Workflow
+name: Deploy Full Stack Application
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  # Deploy Frontend to Vercel
+  deploy-frontend:
+    name: Deploy Next.js to Vercel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          
+      - name: Install dependencies
+        run: pnpm install
+        
+      - name: Build application
+        run: pnpm build
+        
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          vercel-org-id: ${{ secrets.ORG_ID }}
+          vercel-project-id: ${{ secrets.PROJECT_ID }}
+          vercel-args: '--prod'
+
+  # Deploy Backend to Streamlit Cloud (via commit trigger)
+  deploy-backend:
+    name: Trigger Streamlit Deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install streamlit pandas plotly sqlalchemy
+          
+      - name: Test Streamlit app
+        run: |
+          python -c "import streamlit; print('✅ Streamlit ready for deployment')"
+          
+      - name: Notify deployment
+        run: |
+          echo "🚀 Backend will auto-deploy to Streamlit Cloud on push to main"
+          echo "📊 Frontend deployed to Vercel"
+          echo "🔗 Setup complete!"

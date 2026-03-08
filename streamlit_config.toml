@@ -1,0 +1,17 @@
+# 🌟 Streamlit Cloud Configuration
+# Place this file in your repository root for Streamlit Cloud deployment
+
+[theme]
+primaryColor = "#667eea"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f0f2f6"
+textColor = "#262730"
+
+[server]
+headless = true
+enableCORS = false
+port = 8501
+
+[browser]
+gatherUsageStats = false
+serverAddress = "0.0.0.0"

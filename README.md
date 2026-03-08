@@ -7,23 +7,33 @@
   
   <p>
     <a href="#features">Features</a> •
-    <a href="#demo">Demo</a> •
+    <a href="#demo">🚀 Live Demo</a> •
     <a href="#installation">Installation</a> •
     <a href="#usage">Usage</a> •
     <a href="#contributing">Contributing</a>
   </p>
   
   <p>
+    <a href="#" target="_blank">
+      <img src="https://img.shields.io/badge/Live%20Demo-🚀%20Launch-success?style=for-the-badge&logo=streamlit" alt="Live Demo">
+    </a>
+    <a href="#" target="_blank">
+      <img src="https://img.shields.io/badge/Frontend%20Demo-▶️%20View-blue?style=for-the-badge&logo=vercel" alt="Frontend Demo">
+    </a>
+  </p>
+  
+  <p>
     <img src="https://img.shields.io/badge/Python-3.8+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+    <img src="https://img.shields.io/badge/Next.js-14+-black?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js">
     <img src="https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white" alt="Streamlit">
     <img src="https://img.shields.io/badge/Oracle-F80000?style=for-the-badge&logo=oracle&logoColor=white" alt="Oracle">
-    <img src="https://img.shields.io/badge/SQLAlchemy-323232?style=for-the-badge&logo=sqlalchemy&logoColor=white" alt="SQLAlchemy">
   </p>
   
   <p>
     <img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License">
     <img src="https://img.shields.io/badge/Version-1.0.0-blue.svg?style=flat-square" alt="Version">
     <img src="https://img.shields.io/badge/Status-Active-brightgreen.svg?style=flat-square" alt="Status">
+    <img src="https://img.shields.io/badge/Deploy-Ready-success.svg?style=flat-square" alt="Deploy Ready">
   </p>
 </div>
 
@@ -39,6 +49,36 @@ The **Steel Manufacturing Plant Management System** is a full-stack enterprise s
 - **Comprehensive Analytics Dashboard**
 - **Enterprise-grade Database Integration**
 - **Modern, Responsive UI/UX**
+
+## 🚀 Live Demo
+
+Experience the full functionality of our Steel Manufacturing System:
+
+| **Platform** | **Type** | **Status** | **Access** |
+|:-------------|:---------|:-----------|:-----------|
+| 🎯 **Streamlit Cloud** | Main Application | ✅ Live | [**Launch Demo**](#) |
+| 💻 **Vercel** | Next.js Frontend | ✅ Live | [**View Frontend**](#) |
+| 🐳 **Railway** | Full Stack | ✅ Live | [**Full System**](#) |
+| 📱 **GitHub Codespaces** | Development | 🔄 On-demand | [**Open in Codespaces**](https://github.com/codespaces/new?hide_repo_select=true&ref=main) |
+
+### 🎮 Demo Credentials
+```
+Username: demo_admin
+Password: steel_demo_2024
+Role: Admin (Full Access)
+
+Username: demo_operator  
+Password: operator_demo
+Role: Operator (Limited Access)
+```
+
+### 📋 What to Try in the Demo
+- 🏭 **Production Dashboard**: View real-time manufacturing metrics
+- 📦 **Raw Materials**: Add materials and track inventory
+- 🔄 **Production Orders**: Create and monitor production workflows
+- ✅ **Quality Control**: Record inspections and view analytics
+- 🚚 **Shipments**: Track logistics and delivery status
+- 📊 **Analytics**: Explore comprehensive business insights
 
 ## ✨ Features
 

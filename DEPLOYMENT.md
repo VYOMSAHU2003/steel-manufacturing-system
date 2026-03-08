@@ -84,7 +84,49 @@ services:
 
 ---
 
-## 3. 🚂 Railway Deployment
+## 3. 🌐 Render Deployment (New!)
+
+### Prerequisites
+- GitHub repository  
+- Render account (free tier available)
+
+### Steps
+1. **Connect Repository**:
+   - Go to [render.com](https://render.com)
+   - Sign in with GitHub
+   - Click "New +" → "Web Service"
+   - Select your repository
+
+2. **Configure Settings**:
+   - **Name**: `steel-manufacturing-system`
+   - **Region**: Choose preferred region
+   - **Branch**: `main`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `streamlit run app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true`
+
+3. **Environment Variables** (Optional):
+   ```env
+   ORACLE_HOST=your_host
+   ORACLE_PORT=1521
+   ORACLE_SERVICE_NAME=your_service  
+   ORACLE_USER=your_user
+   ORACLE_PASSWORD=your_password
+   ```
+
+### Notes
+- ✅ **Free tier available** (75 hours/month)
+- ✅ Automatic SSL certificates
+- ✅ Git-based deployments
+- ✅ Auto-deploy on push (optional)
+- ✅ SQLite fallback if Oracle unavailable
+- ⚠️ Free services sleep after inactivity
+
+### Quick Deploy Button
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+---
+
+## 4. 🚂 Railway Deployment
 
 ### Prerequisites
 - GitHub repository
@@ -117,7 +159,7 @@ services:
 
 ---
 
-## 4. ☁️ Heroku Deployment
+## 5. ☁️ Heroku Deployment
 
 ### Prerequisites
 - GitHub repository

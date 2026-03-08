@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: steel-manufacturing-system
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.16
+      - key: ORACLE_HOST
+        value: localhost
+      - key: ORACLE_PORT  
+        value: 1521
+      - key: ORACLE_SERVICE_NAME
+        value: ORCL
+      - key: ORACLE_USER
+        value: system
+      - key: ORACLE_PASSWORD
+        value: ""
+    autoDeploy: true
