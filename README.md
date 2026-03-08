@@ -56,10 +56,10 @@ Experience the full functionality of our Steel Manufacturing System:
 
 | **Platform** | **Type** | **Status** | **Access** |
 |:-------------|:---------|:-----------|:-----------|
-| 🎯 **Streamlit Cloud** | Main Application | ✅ Live | [**Launch Demo**](#) |
-| 💻 **Vercel** | Next.js Frontend | ✅ Live | [**View Frontend**](#) |
-| 🐳 **Railway** | Full Stack | ✅ Live | [**Full System**](#) |
-| 📱 **GitHub Codespaces** | Development | 🔄 On-demand | [**Open in Codespaces**](https://github.com/codespaces/new?hide_repo_select=true&ref=main) |
+| � **Render** | Main Application | ✅ Live | [**Launch App**](https://steel-manufacturing-system.onrender.com) |
+| 📱 **GitHub Codespaces** | Development | ✅ Ready | [**Open in Codespaces**](https://github.com/codespaces/new?hide_repo_select=true&ref=main) |
+| 🔄 **GitHub Actions** | CI/CD Pipeline | ✅ Active | [**View Workflows**](../../actions) |
+| 📄 **GitHub Pages** | Documentation | ✅ Live | [**View Docs**](https://vyomsahu2003.github.io/steel-manufacturing-system) |
 
 ### 🎮 Demo Credentials
 ```
@@ -79,6 +79,12 @@ Role: Operator (Limited Access)
 - ✅ **Quality Control**: Record inspections and view analytics
 - 🚚 **Shipments**: Track logistics and delivery status
 - 📊 **Analytics**: Explore comprehensive business insights
+
+### 🚀 GitHub Deployment Features
+- **🔄 Auto-Deploy**: Push code → Automatic deployment
+- **📱 Cloud Dev**: Instant development environment
+- **🧪 CI/CD**: Automated testing and validation
+- **📄 Documentation**: Live project documentation
 
 ## ✨ Features
 

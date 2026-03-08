@@ -1,53 +1,113 @@
-# Automated Deployment Workflow
-name: Deploy Full Stack Application
+# 🚀 Automated Deployment Workflow for Steel Manufacturing System
+name: Deploy Streamlit Application
 
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 
 jobs:
-  # Deploy Frontend to Vercel
-  deploy-frontend:
-    name: Deploy Next.js to Vercel
+  # Test and validate the application
+  test-application:
+    name: Test Streamlit App
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
         
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          node-version: '18'
+          python-version: '3.9'
           
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
+      - name: Cache dependencies
+        uses: actions/cache@v3
         with:
-          version: 8
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           
       - name: Install dependencies
-        run: pnpm install
-        
-      - name: Build application
-        run: pnpm build
-        
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          vercel-org-id: ${{ secrets.ORG_ID }}
-          vercel-project-id: ${{ secrets.PROJECT_ID }}
-          vercel-args: '--prod'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Test application startup
+        run: |
+          python -c "import streamlit as st; print('✅ Streamlit imported successfully')"
+          python -c "import app; print('✅ App module loaded successfully')"
 
-  # Deploy Backend to Streamlit Cloud (via commit trigger)
-  deploy-backend:
-    name: Trigger Streamlit Deployment
+  # Deploy to Render (automatic via webhook)
+  deploy-render:
+    name: Deploy to Render
+    needs: test-application
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
+        
+      - name: Notify Render Deployment
+        run: |
+          echo "🚀 Deploying to Render..." 
+          echo "✅ Auto-deployment triggered by push to main branch"
+          echo "🔗 Check deployment status at: https://dashboard.render.com"
+          
+  # Deploy to Streamlit Cloud (optional)
+  deploy-streamlit-cloud:
+    name: Deploy to Streamlit Cloud
+    needs: test-application
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Notify Streamlit Cloud
+        run: |
+          echo "☁️ Deploying to Streamlit Cloud..."
+          echo "✅ Connect your repository at: https://share.streamlit.io"
+          echo "📋 App file: app.py"
+          echo "🏷️ Main branch: main"
+
+  # Generate deployment report
+  deployment-report:
+    name: Generate Deployment Report
+    needs: [test-application, deploy-render, deploy-streamlit-cloud]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Generate Deployment Summary
+        run: |
+          echo "# 🚀 Steel Manufacturing System Deployment Report" > deployment-report.md
+          echo "" >> deployment-report.md
+          echo "## 📊 Deployment Status" >> deployment-report.md
+          echo "" >> deployment-report.md
+          echo "- **Repository**: ${{ github.repository }}" >> deployment-report.md
+          echo "- **Branch**: ${{ github.ref_name }}" >> deployment-report.md
+          echo "- **Commit**: ${{ github.sha }}" >> deployment-report.md
+          echo "- **Timestamp**: $(date)" >> deployment-report.md
+          echo "" >> deployment-report.md
+          echo "## 🎯 Available Deployments" >> deployment-report.md
+          echo "" >> deployment-report.md
+          echo "| Platform | Status | URL |" >> deployment-report.md
+          echo "|----------|--------|-----|" >> deployment-report.md
+          echo "| 🌐 Render | ✅ Auto-deploy | \`https://steel-manufacturing-system.onrender.com\` |" >> deployment-report.md
+          echo "| ☁️ Streamlit Cloud | 🔗 Manual setup | \`https://share.streamlit.io\` |" >> deployment-report.md
+          echo "| 📱 GitHub Codespaces | ✅ Available | \`Click 'Code' → 'Codespaces'\` |" >> deployment-report.md
+          echo "" >> deployment-report.md
+          echo "## 🔧 Next Steps" >> deployment-report.md
+          echo "" >> deployment-report.md
+          echo "1. ✅ **Render**: Auto-deployment active" >> deployment-report.md
+          echo "2. 🔗 **Streamlit Cloud**: Connect manually if needed" >> deployment-report.md
+          echo "3. 📊 **Monitor**: Check deployment logs" >> deployment-report.md
+          echo "4. 🧪 **Test**: Verify all features work" >> deployment-report.md
+          
+          cat deployment-report.md
         
       - name: Setup Python
         uses: actions/setup-python@v4

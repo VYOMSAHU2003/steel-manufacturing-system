@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steel Manufacturing System - GitHub Deployment</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .deployment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .deployment-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .deployment-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .deployment-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .deployment-card p {
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .btn.primary {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+        
+        .btn.primary:hover {
+            background: #45a049;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-left: 1rem;
+        }
+        
+        .status.live {
+            background: #4CAF50;
+        }
+        
+        .status.setup {
+            background: #FF9800;
+        }
+        
+        .features {
+            margin: 3rem 0;
+            text-align: center;
+        }
+        
+        .features h2 {
+            margin-bottom: 2rem;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .feature-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏭 Steel Manufacturing System</h1>
+            <p>Enterprise-grade manufacturing management solution deployed on GitHub</p>
+        </div>
+
+        <div class="deployment-grid">
+            <div class="deployment-card">
+                <h3>🌐 Render Deployment <span class="status live">Live</span></h3>
+                <p>Automatic deployment configured with GitHub Actions. Every push to main branch triggers a new deployment.</p>
+                <a href="#" class="btn primary">View Live App</a>
+                <a href="https://dashboard.render.com" class="btn">Render Dashboard</a>
+            </div>
+
+            <div class="deployment-card">
+                <h3>☁️ Streamlit Cloud <span class="status setup">Setup Available</span></h3>
+                <p>Connect your GitHub repository to Streamlit Cloud for additional deployment option.</p>
+                <a href="https://share.streamlit.io" class="btn primary">Setup Deployment</a>
+            </div>
+
+            <div class="deployment-card">
+                <h3>📱 GitHub Codespaces <span class="status live">Ready</span></h3>
+                <p>Instant development environment in your browser. Pre-configured with Python and dependencies.</p>
+                <a href="#" class="btn primary">Open in Codespaces</a>
+            </div>
+
+            <div class="deployment-card">
+                <h3>🔄 GitHub Actions <span class="status live">Active</span></h3>
+                <p>Automated testing and deployment pipeline. Runs on every push to validate and deploy.</p>
+                <a href="#" class="btn primary">View Workflows</a>
+            </div>
+        </div>
+
+        <div class="features">
+            <h2>🎯 Manufacturing System Features</h2>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h4>📦 Raw Materials</h4>
+                    <p>Inventory tracking and management</p>
+                </div>
+                <div class="feature-item">
+                    <h4>🏗️ Production Planning</h4>
+                    <p>Order management and scheduling</p>
+                </div>
+                <div class="feature-item">
+                    <h4>✅ Quality Assurance</h4>
+                    <p>Inspection and compliance tracking</p>
+                </div>
+                <div class="feature-item">
+                    <h4>🚚 Logistics</h4>
+                    <p>Shipment and delivery monitoring</p>
+                </div>
+                <div class="feature-item">
+                    <h4>📊 Analytics</h4>
+                    <p>Real-time insights and reporting</p>
+                </div>
+                <div class="feature-item">
+                    <h4>🔐 Authentication</h4>
+                    <p>Role-based access control</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2026 Steel Manufacturing System | Deployed with GitHub & Render</p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-update GitHub Codespaces link
+        document.querySelector('[href="#"]').href = `https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=${window.location.hostname === 'github.io' ? 'VYOMSAHU2003/steel-manufacturing-system' : 'your-repo'}`;
+    </script>
+</body>
+</html>
