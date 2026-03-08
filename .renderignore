@@ -1,4 +1,9 @@
-Dockerfile*
-docker-compose*
-*.dockerignore
-.dockerignore
+**/Dockerfile*
+**/docker-compose*
+**/.dockerignore
+**/docker*
+**/*.dockerignore
+.docker*
+docker*
+# Force Python-only deployment
+# No Docker allowed
