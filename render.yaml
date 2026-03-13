@@ -4,16 +4,20 @@ services:
     env: python
     plan: free
     buildCommand: |
-      echo "Building Python application..."
+      echo "Installing Python dependencies..."
       pip install --upgrade pip setuptools wheel
       pip install -r requirements-render.txt
-      echo "Build complete"
+      echo "Dependencies installed successfully"
     startCommand: |
-      echo "Starting Python application..."
-      streamlit run app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true
+      echo "Starting Steel Manufacturing System..."
+      exec streamlit run app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true --logger.level=info
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.16
       - key: USE_SQLITE
         value: true
+      - key: STREAMLIT_SERVER_HEADLESS
+        value: true
+      - key: STREAMLIT_BROWSER_GATHERUSAGESTATS
+        value: false
     autoDeploy: true

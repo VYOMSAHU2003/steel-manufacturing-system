@@ -14,5 +14,5 @@ level = "info"
 
 [server]
 headless = true
-port = 8501
-runOnSave = true
+runOnSave = false
+enableXsrfProtection = true
