@@ -3,10 +3,17 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime, timedelta
 from config.database import SessionLocal
-from models.database_models import RawMaterial, InventoryLog
+from models.database_models import (
+    RawMaterial, InventoryLog, MaterialConsumption, 
+    LowStockAlert, MaterialReorderSuggestion
+)
 from utils.helpers import (
     display_success_message, display_error_message, display_info_message,
     format_currency, format_date, get_material_status_color, validate_positive_number
+)
+from utils.material_tracking import (
+    material_tracker, quick_consume_material, 
+    get_low_stock_alerts, display_alert_notifications
 )
 
 def show():
@@ -186,10 +193,14 @@ def show():
     
     st.markdown("---")
     
-    # Enhanced Tab Navigation 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    # Display low stock alerts prominently at the top
+    display_low_stock_alerts()
+    
+    # Enhanced Tab Navigation with new consumption tracking
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "🏭 Inventory Overview", 
         "➕ Add Material", 
+        "⚡ Consume Material",  # New consumption tracking tab
         "📊 BSP Analytics", 
         "📝 Activity Logs",
         "🔬 Quality Control"
@@ -202,12 +213,15 @@ def show():
         show_add_material_form()
     
     with tab3:
-        show_bsp_analytics()
+        show_material_consumption()  # New consumption tab
     
     with tab4:
+        show_bsp_analytics()
+    
+    with tab5:
         show_inventory_logs()
         
-    with tab5:
+    with tab6:
         show_quality_control()
 
 def show_bsp_inventory():
@@ -800,5 +814,258 @@ def show_quality_control():
         
     except Exception as e:
         display_error_message(f"Error loading quality control: {e}")
+    finally:
+        db.close()
+
+def display_low_stock_alerts():
+    """Display low stock alerts prominently at the top"""
+    alerts = get_low_stock_alerts()
+    
+    if alerts:
+        st.markdown("### 🚨 **URGENT STOCK ALERTS**")
+        
+        alert_cols = st.columns(min(len(alerts), 3))  # Show up to 3 alerts in columns
+        
+        for i, alert in enumerate(alerts[:3]):
+            with alert_cols[i]:
+                if alert.alert_type == "critical":
+                    st.error(f"""
+                    **🔴 CRITICAL: Material Running Out!**
+                    
+                    **Material**: {alert.material_name if hasattr(alert, 'material_name') else 'Unknown'}
+                    
+                    **Current Stock**: {alert.current_stock:.1f} units
+                    
+                    **Action Required**: Order immediately!
+                    """)
+                else:
+                    st.warning(f"""
+                    **🟡 LOW STOCK WARNING**
+                    
+                    **Material**: {alert.material_name if hasattr(alert, 'material_name') else 'Unknown'}
+                    
+                    **Current Stock**: {alert.current_stock:.1f} units
+                    
+                    **Action**: Plan reorder soon
+                    """)
+                
+                if st.button(f"✅ Acknowledge", key=f"alert_ack_{alert.alert_id}"):
+                    if material_tracker.acknowledge_alert(alert.alert_id):
+                        st.success("Alert acknowledged!")
+                        st.rerun()
+        
+        # Show reorder suggestions
+        suggestions = material_tracker.get_reorder_suggestions()
+        if suggestions:
+            st.markdown("### 📋 **Automatic Reorder Suggestions**")
+            
+            for suggestion in suggestions[:3]:  # Show top 3 suggestions
+                urgency_color = {
+                    "urgent": "🔴",
+                    "high": "🟠", 
+                    "medium": "🟡",
+                    "low": "🟢"
+                }
+                
+                st.info(f"""
+                **{urgency_color.get(suggestion.urgency_level, '⚪')} Reorder Suggestion ({suggestion.urgency_level.upper()})**
+                
+                **Days Until Stockout**: {suggestion.days_until_stockout} days
+                
+                **Suggested Order Quantity**: {suggestion.suggested_order_quantity:.0f} units
+                
+                **Average Daily Usage**: {suggestion.average_daily_consumption:.1f} units/day
+                """)
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button(f"✅ Create Order", key=f"order_{suggestion.suggestion_id}"):
+                        st.success("Order request created!")
+                        material_tracker.process_reorder_suggestion(suggestion.suggestion_id)
+                        st.rerun()
+                
+                with col2:
+                    if st.button(f"⏭️ Skip", key=f"skip_{suggestion.suggestion_id}"):
+                        material_tracker.process_reorder_suggestion(suggestion.suggestion_id)
+                        st.rerun()
+
+def show_material_consumption():
+    """Material consumption tracking interface"""
+    st.subheader("⚡ Material Consumption Tracking")
+    
+    # Quick summary
+    st.markdown("**📊 Today's Material Usage Summary**")
+    
+    db = SessionLocal()
+    try:
+        # Get today's consumption
+        today = datetime.now().date()
+        today_consumptions = db.query(MaterialConsumption).filter(
+            MaterialConsumption.consumption_date >= datetime.combine(today, datetime.min.time())
+        ).all()
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        total_consumed_today = sum(c.consumed_quantity for c in today_consumptions)
+        unique_materials_used = len(set(c.material_id for c in today_consumptions))
+        total_transactions = len(today_consumptions)
+        
+        with col1:
+            st.metric("Total Consumed", f"{total_consumed_today:.1f} units")
+        with col2:
+            st.metric("Materials Used", f"{unique_materials_used}")
+        with col3:
+            st.metric("Transactions", f"{total_transactions}")
+        with col4:
+            production_count = len([c for c in today_consumptions if c.consumption_type == "production"])
+            st.metric("For Production", f"{production_count}")
+        
+        st.markdown("---")
+        
+        # Material consumption interface
+        consumption_col1, consumption_col2 = st.columns(2)
+        
+        with consumption_col1:
+            st.markdown("**🔧 Consume Material**")
+            
+            # Get available materials
+            materials = db.query(RawMaterial).filter(RawMaterial.quantity_available > 0).all()
+            
+            if not materials:
+                st.error("No materials available for consumption!")
+                return
+            
+            with st.form("consume_material_form"):
+                selected_material = st.selectbox(
+                    "Select Material to Consume",
+                    options=[(m.material_id, f"{m.material_name} ({m.quantity_available:.1f} {m.unit} available)") for m in materials],
+                    format_func=lambda x: x[1]
+                )
+                
+                material_id = selected_material[0] if selected_material else None
+                material = next((m for m in materials if m.material_id == material_id), None)
+                
+                if material:
+                    st.info(f"**Available Stock**: {material.quantity_available:.1f} {material.unit}")
+                
+                consume_quantity = st.number_input(
+                    "Quantity to Consume",
+                    min_value=0.1,
+                    max_value=float(material.quantity_available) if material else 100.0,
+                    step=0.1,
+                    help="Enter the amount to consume from inventory"
+                )
+                
+                consumption_type = st.selectbox(
+                    "Consumption Type",
+                    ["production", "testing", "maintenance", "quality_check", "emergency_use"]
+                )
+                
+                consumption_notes = st.text_area(
+                    "Notes (Optional)",
+                    placeholder="Reason for consumption, production order, etc."
+                )
+                
+                submitted = st.form_submit_button("🔥 Consume Material", type="primary")
+                
+                if submitted and material_id and consume_quantity > 0:
+                    result = quick_consume_material(
+                        material_id=material_id,
+                        quantity=consume_quantity,
+                        consumption_type=consumption_type
+                    )
+                    
+                    if result["success"]:
+                        display_success_message(f"""
+                        ✅ **Material Consumed Successfully!**
+                        
+                        **Consumed**: {consume_quantity:.1f} {material.unit}
+                        
+                        **New Stock**: {result['new_stock']:.1f} {material.unit}
+                        
+                        **Type**: {consumption_type.title()}
+                        """)
+                        st.rerun()  # Refresh to show updated stock
+                    else:
+                        display_error_message(f"❌ Consumption Failed: {result['message']}")
+        
+        with consumption_col2:
+            st.markdown("**📈 Recent Consumption History**")
+            
+            # Show recent consumption history
+            recent_consumptions = material_tracker.get_consumption_history(days=7)
+            
+            if recent_consumptions:
+                consumption_data = []
+                for consumption in recent_consumptions[:10]:  # Last 10 records
+                    # Get material name
+                    material = db.query(RawMaterial).filter(
+                        RawMaterial.material_id == consumption.material_id
+                    ).first()
+                    
+                    consumption_data.append({
+                        "Date": consumption.consumption_date.strftime("%Y-%m-%d %H:%M"),
+                        "Material": material.material_name if material else "Unknown",
+                        "Quantity": f"{consumption.consumed_quantity:.1f}",
+                        "Type": consumption.consumption_type.title(),
+                        "Stock After": f"{consumption.new_stock:.1f}"
+                    })
+                
+                if consumption_data:
+                    df = pd.DataFrame(consumption_data)
+                    st.dataframe(df, use_container_width=True)
+                else:
+                    st.info("No recent consumption records found.")
+            else:
+                st.info("No consumption history available.")
+        
+        # Consumption analytics
+        st.markdown("---")
+        st.markdown("**📊 Consumption Analytics**")
+        
+        analytics_col1, analytics_col2 = st.columns(2)
+        
+        with analytics_col1:
+            # Daily consumption trend
+            if recent_consumptions:
+                daily_data = {}
+                for consumption in recent_consumptions:
+                    date = consumption.consumption_date.date()
+                    if date not in daily_data:
+                        daily_data[date] = 0
+                    daily_data[date] += consumption.consumed_quantity
+                
+                if daily_data:
+                    df_daily = pd.DataFrame([
+                        {"Date": date, "Total Consumed": quantity}
+                        for date, quantity in sorted(daily_data.items())
+                    ])
+                    
+                    fig = px.line(df_daily, x="Date", y="Total Consumed",
+                                 title="Daily Material Consumption Trend")
+                    st.plotly_chart(fig, use_container_width=True)
+        
+        with analytics_col2:
+            # Consumption by type
+            if recent_consumptions:
+                type_data = {}
+                for consumption in recent_consumptions:
+                    cons_type = consumption.consumption_type
+                    if cons_type not in type_data:
+                        type_data[cons_type] = 0
+                    type_data[cons_type] += consumption.consumed_quantity
+                
+                if type_data:
+                    df_types = pd.DataFrame([
+                        {"Type": cons_type.title(), "Total": quantity}
+                        for cons_type, quantity in type_data.items()
+                    ])
+                    
+                    fig = px.pie(df_types, values="Total", names="Type",
+                                title="Consumption by Type (Last 7 days)")
+                    st.plotly_chart(fig, use_container_width=True)
+        
+    except Exception as e:
+        display_error_message(f"Error loading consumption interface: {e}")
     finally:
         db.close()

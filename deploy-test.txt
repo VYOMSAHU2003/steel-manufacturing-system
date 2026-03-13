@@ -1,5 +1,0 @@
-﻿# Auto-Deploy Test
-
-Created: 2026-03-08_12-53-54
-
-Testing automatic deployment!

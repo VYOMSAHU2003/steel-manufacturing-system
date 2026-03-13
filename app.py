@@ -3,6 +3,8 @@ import plotly.graph_objects as go
 import plotly.express as px
 import pandas as pd
 import numpy as np
+import time
+import random
 from datetime import datetime, timedelta
 from pages import (
     authentication,
@@ -12,6 +14,28 @@ from pages import (
     quality_assurance,
     logistics_shipment
 )
+from utils.material_tracking import display_alert_notifications
+
+# Try to import live simulation, with fallbacks if it fails
+try:
+    from utils.live_simulation import get_live_metrics, start_background_simulation, initialize_live_simulation
+except ImportError:
+    # Create fallback functions if live_simulation module is not available
+    def get_live_metrics():
+        import random
+        return {
+            "production_rate": 95.5 + random.uniform(-2, 2),
+            "furnace_temp": 1665 + random.randint(-10, 10),
+            "power_status": "STABLE",
+            "total_updates": random.randint(50, 200),
+            "last_update": None
+        }
+    
+    def start_background_simulation():
+        pass
+    
+    def initialize_live_simulation():
+        pass
 
 def main():
     st.set_page_config(
@@ -20,6 +44,114 @@ def main():
         layout="wide",
         initial_sidebar_state="expanded"
     )
+    
+    # Initialize live simulation on app start
+    if 'simulation_started' not in st.session_state:
+        st.session_state.simulation_started = True
+        start_background_simulation()
+    
+    # Auto-refresh every 60 seconds (Demo Mode)
+    if 'auto_refresh' not in st.session_state:
+        st.session_state.auto_refresh = True
+    
+    # Add refresh controls in sidebar
+    with st.sidebar:
+        st.markdown("### 🔄 **LIVE DEMO MODE**")
+        
+        # Live status indicators
+        live_metrics = get_live_metrics()
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            # Create a unique key using session ID and current frame counter
+            import hashlib
+            import uuid
+            
+            if 'session_id' not in st.session_state:
+                st.session_state.session_id = str(uuid.uuid4())[:8]
+            
+            if 'button_counter' not in st.session_state:
+                st.session_state.button_counter = 0
+            
+            refresh_key = f"refresh_{st.session_state.session_id}_{st.session_state.button_counter}"
+            
+            if st.button("🔄 Manual Refresh", key=refresh_key, help="Refresh data now"):
+                st.session_state.button_counter += 1
+                st.rerun()
+        
+        with col2:
+            auto_refresh = st.toggle("⚡ Auto Refresh", value=st.session_state.auto_refresh, 
+                                   help="Auto refresh every 60 seconds")
+            st.session_state.auto_refresh = auto_refresh
+        
+        # Live metrics display
+        st.markdown("#### 📊 **Live Plant Status**")
+        
+        production_rate = live_metrics.get("production_rate", 95.5)
+        furnace_temp = live_metrics.get("furnace_temp", 1665)
+        power_status = live_metrics.get("power_status", "STABLE")
+        total_updates = live_metrics.get("total_updates", 0)
+        last_update = live_metrics.get("last_update")
+        
+        # Production rate indicator
+        prod_color = "🟢" if production_rate > 95 else "🟡" if production_rate > 90 else "🔴"
+        st.write(f"{prod_color} **Production**: {production_rate:.1f}%")
+        
+        # Furnace temperature
+        temp_color = "🟢" if 1650 <= furnace_temp <= 1680 else "🟡" if 1620 <= furnace_temp <= 1700 else "🔴"
+        st.write(f"{temp_color} **Furnace**: {furnace_temp}°C")
+        
+        # Power status
+        power_color = "🟢" if power_status == "STABLE" else "🟡"
+        st.write(f"{power_color} **Power**: {power_status}")
+        
+        # Update counter
+        st.write(f"🔄 **Updates**: {total_updates}")
+        
+        if last_update:
+            try:
+                from datetime import datetime
+                if isinstance(last_update, str):
+                    update_time = datetime.fromisoformat(last_update.replace('Z', '+00:00'))
+                else:
+                    update_time = last_update
+                st.write(f"⏰ **Last**: {update_time.strftime('%H:%M:%S')}")
+            except:
+                st.write(f"⏰ **Last**: Just now")
+        
+        st.markdown("---")
+    
+    # Auto-refresh logic
+    if st.session_state.auto_refresh:
+        # Create a placeholder for countdown
+        countdown_placeholder = st.empty()
+        
+        # Auto-refresh every 60 seconds
+        refresh_interval = 60  # seconds
+        
+        # Check if we need to refresh (simple time-based check)
+        current_time = time.time()
+        if 'last_refresh_time' not in st.session_state:
+            st.session_state.last_refresh_time = current_time
+        
+        time_since_refresh = current_time - st.session_state.last_refresh_time
+        
+        if time_since_refresh >= refresh_interval:
+            st.session_state.last_refresh_time = current_time
+            st.rerun()
+        
+        # Show countdown in main area
+        time_remaining = refresh_interval - int(time_since_refresh)
+        if time_remaining > 0:
+            countdown_placeholder.info(
+                f"🔄 **LIVE DEMO MODE**: Next auto-refresh in {time_remaining} seconds | "
+                f"✨ Data updating automatically every minute | "
+                f"🏭 Real-time steel plant simulation active"
+            )
+        
+        # Use JavaScript to refresh page (as fallback)
+        if time_remaining <= 1:
+            st.rerun()
     
     # Enhanced CSS for BSP branding and modern UI with creative design
     st.markdown("""
@@ -374,7 +506,14 @@ def show_main_application():
             ⚡ Plant: <span style="color: #667eea;">{online_count}/{len(plant_status)} Online</span>
             </div>""", unsafe_allow_html=True)
     with col4:
-        if st.button("🚪 Logout", type="secondary", use_container_width=True):
+        # Create unique logout button key
+        if 'logout_session_id' not in st.session_state:
+            import uuid
+            st.session_state.logout_session_id = str(uuid.uuid4())[:8]
+            
+        logout_key = f"logout_{st.session_state.logout_session_id}"
+        
+        if st.button("🚪 Logout", key=logout_key, type="secondary", width="stretch"):
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
             st.rerun()
@@ -437,10 +576,18 @@ def show_main_application():
         st.markdown("---")
         st.markdown("### 🚨 Emergency Controls")
         
-        if st.button("🛑 Emergency Stop", type="secondary", use_container_width=True):
+        # Create unique emergency button keys
+        if 'emergency_session_id' not in st.session_state:
+            import uuid
+            st.session_state.emergency_session_id = str(uuid.uuid4())[:8]
+        
+        emergency_key = f"emergency_{st.session_state.emergency_session_id}"
+        alert_key = f"alert_{st.session_state.emergency_session_id}"
+        
+        if st.button("🛑 Emergency Stop", key=emergency_key, type="secondary", width="stretch"):
             st.error("🚨 Emergency stop initiated! All operations halted.")
             
-        if st.button("🚨 Alert Management", type="secondary", use_container_width=True):
+        if st.button("🚨 Alert Management", key=alert_key, type="secondary", width="stretch"):
             st.warning("📢 Alert system activated - Management notified")
             
         # Enhanced Admin Controls
@@ -448,10 +595,18 @@ def show_main_application():
             st.markdown("---")
             st.markdown("### ⚡ Admin Control Panel")
             
-            if st.button("📊 System Diagnostics", use_container_width=True):
+            # Create unique admin button keys
+            if 'admin_session_id' not in st.session_state:
+                import uuid
+                st.session_state.admin_session_id = str(uuid.uuid4())[:8]
+            
+            diag_key = f"diag_{st.session_state.admin_session_id}"
+            maint_key = f"maint_{st.session_state.admin_session_id}"
+            
+            if st.button("📊 System Diagnostics", key=diag_key, width="stretch"):
                 st.success("🔧 Running comprehensive system diagnostics...")
                 
-            if st.button("🔧 Maintenance Mode", use_container_width=True):
+            if st.button("🔧 Maintenance Mode", key=maint_key, width="stretch"):
                 st.info("⚙️ Maintenance mode activated - Limited access enabled")
     
     # Route to the selected module
@@ -512,7 +667,12 @@ def show_navbar():
     
     for i, option in enumerate(nav_options):
         with cols[i]:
-            button_key = f"nav_btn_{option.replace(' ', '_').replace('&', 'and')}"
+            # Create unique button key with session ID
+            if 'nav_session_id' not in st.session_state:
+                import uuid
+                st.session_state.nav_session_id = str(uuid.uuid4())[:8]
+            
+            button_key = f"nav_{st.session_state.nav_session_id}_{option.replace(' ', '_').replace('&', 'and')}"
             
             # Enhanced button styling based on selection state
             is_selected = st.session_state.selected_module == option
@@ -522,7 +682,7 @@ def show_navbar():
             if st.button(
                 option, 
                 key=button_key, 
-                use_container_width=True,
+                width="stretch",
                 type=button_type,
                 help=f"Navigate to {option.replace('🏭 ', '').replace('📦 ', '').replace('🔥 ', '').replace('📊 ', '').replace('✅ ', '').replace('🚚 ', '').replace('⚡ ', '').replace('🛡️ ', '').replace('🤖 ', '')} module"
             ):
@@ -533,6 +693,14 @@ def show_navbar():
 
 def route_to_module(selected_module):
     """Route to the selected module"""
+    
+    # Display low stock alerts on every page in sidebar
+    try:
+        display_alert_notifications()
+    except Exception as e:
+        # Silently handle any alert display errors
+        pass
+    
     if selected_module == "🏭 Plant Overview":
         show_plant_overview()
     elif selected_module == "📦 Raw Materials":
@@ -553,22 +721,208 @@ def route_to_module(selected_module):
         show_ai_analytics()
 
 def show_plant_overview():
-    """Revolutionary plant overview dashboard with modern design"""
+    """Revolutionary plant overview dashboard with LIVE DATA"""
+    
+    # Live Demo Header
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 50%, #45b7d1 100%); 
+                padding: 1rem; border-radius: 15px; margin-bottom: 1rem; text-align: center;">
+        <h3 style="color: white; margin: 0;">
+            🔴 LIVE DEMO MODE | 🔄 Auto-Updating Every 60 Seconds | 
+            ⏰ {datetime.now().strftime('%H:%M:%S')}
+        </h3>
+    </div>
+    """, unsafe_allow_html=True)
+    
     st.markdown("## 🏭 Live Production Command Center")
     
-    # Enhanced Key Metrics Grid with modern cards
+    # Get live metrics
+    live_metrics = get_live_metrics()
+    
+    # Enhanced Key Metrics Grid with LIVE DATA
     st.markdown("### 📊 Real-Time Performance Metrics")
     col1, col2, col3, col4 = st.columns(4, gap="medium")
     
+    # Live production data
+    production_rate = live_metrics.get("production_rate", 95.5)
+    furnace_temp = live_metrics.get("furnace_temp", 1665) 
+    total_updates = live_metrics.get("total_updates", 0)
+    
+    # Calculate dynamic values based on live data
+    daily_production = int(12847 + (production_rate - 95) * 200)
+    target_achievement = (daily_production / 13000) * 100
+    
     with col1:
+        delta_color = "normal" if target_achievement >= 98 else "inverse"
         st.markdown("""
             <div class="metric-card">
                 <div class="metric-title">🔥 Steel Production Today</div>
-                <div class="metric-value">12,847</div>
+                <div class="metric-value">""" + f"{daily_production:,}" + """</div>
                 <div style="font-size: 0.95rem; color: #667eea; margin: 0.5rem 0;">MT (Target: 13,000)</div>
-                <div class="metric-change">▲ 98.8% Target Achievement</div>
+                <div class="metric-change">""" + f"▲ {target_achievement:.1f}% Target Achievement" + """</div>
             </div>
         """, unsafe_allow_html=True)
+    
+    with col2:
+        efficiency = min(99.5, production_rate + random.uniform(0, 3))
+        st.markdown("""
+            <div class="metric-card">
+                <div class="metric-title">⚡ Plant Efficiency</div>
+                <div class="metric-value">""" + f"{efficiency:.1f}%" + """</div>
+                <div style="font-size: 0.95rem; color: #00b894; margin: 0.5rem 0;">Running Optimally</div>
+                <div class="metric-change">""" + f"📈 Live: {production_rate:.1f}% Production Rate" + """</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        quality_rate = max(95, min(99.8, 98.2 + random.uniform(-1, 1)))
+        st.markdown("""
+            <div class="metric-card">
+                <div class="metric-title">✅ Quality Rate</div>
+                <div class="metric-value">""" + f"{quality_rate:.1f}%" + """</div>
+                <div style="font-size: 0.95rem; color: #fd7956; margin: 0.5rem 0;">BSP Standard</div>
+                <div class="metric-change">🎯 Target: >98.0%</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        furnace_status = "🟢 OPTIMAL" if 1650 <= furnace_temp <= 1680 else "🟡 WATCH" if 1620 <= furnace_temp <= 1700 else "🔴 ALERT"
+        st.markdown("""
+            <div class="metric-card">
+                <div class="metric-title">🌡️ Furnace Status</div>
+                <div class="metric-value">""" + f"{furnace_temp}°C" + """</div>
+                <div style="font-size: 0.95rem; color: #fdcb6e; margin: 0.5rem 0;">""" + furnace_status + """</div>
+                <div class="metric-change">🔥 Live Temperature</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    # Live Data Simulation Status
+    st.markdown("### 🔄 Live Simulation Status")
+    
+    sim_col1, sim_col2, sim_col3, sim_col4 = st.columns(4)
+    
+    with sim_col1:
+        st.metric("🔄 Total Updates", f"{total_updates}", delta="Live simulation active")
+    
+    with sim_col2:
+        power_status = live_metrics.get("power_status", "STABLE")
+        power_color = "normal" if power_status == "STABLE" else "inverse"
+        st.metric("⚡ Power Grid", power_status, delta="Real-time monitoring", delta_color=power_color)
+    
+    with sim_col3:
+        # Simulate material alerts count
+        from utils.material_tracking import get_low_stock_alerts
+        try:
+            alerts = get_low_stock_alerts()
+            alert_count = len(alerts) if alerts else 0
+        except:
+            alert_count = random.randint(3, 8)
+        
+        alert_color = "inverse" if alert_count > 5 else "normal"
+        st.metric("🚨 Active Alerts", f"{alert_count}", delta="Stock notifications", delta_color=alert_color)
+    
+    with sim_col4:
+        # Live consumption rate
+        consumption_rate = random.uniform(85, 120)
+        st.metric("📉 Material Usage", f"{consumption_rate:.1f}t/hr", delta="Live tracking")
+    
+    # Live Production Charts
+    st.markdown("### 📈 Live Production Trends")
+    
+    chart_col1, chart_col2 = st.columns(2)
+    
+    with chart_col1:
+        # Generate live production data
+        hours = [(datetime.now() - timedelta(hours=i)).hour for i in range(24, 0, -1)]
+        production_values = []
+        
+        for i, hour in enumerate(hours):
+            base_production = 550  # Base hourly production
+            variation = random.uniform(-50, 100)
+            # Make current hour reflect live production rate
+            if i == len(hours) - 1:  # Current hour
+                variation += (production_rate - 95) * 10
+            production_values.append(max(400, base_production + variation))
+        
+        df_production = pd.DataFrame({
+            "Hour": [f"{h:02d}:00" for h in hours],
+            "Production (MT)": production_values
+        })
+        
+        fig_production = px.line(df_production, x="Hour", y="Production (MT)",
+                               title="🔥 24-Hour Production Trend (LIVE)",
+                               markers=True)
+        fig_production.add_hline(y=550, line_dash="dash", line_color="green", 
+                               annotation_text="Target: 550 MT/hr")
+        fig_production.update_traces(line_color="#ff6b6b", line_width=3)
+        st.plotly_chart(fig_production, width="stretch")
+    
+    with chart_col2:
+        # Live material consumption
+        materials = ["Iron Ore", "Coal", "Limestone", "Scrap Steel", "Flux"]
+        current_consumption = [random.uniform(50, 150) for _ in materials]
+        
+        df_consumption = pd.DataFrame({
+            "Material": materials,
+            "Consumption (t/hr)": current_consumption
+        })
+        
+        fig_consumption = px.bar(df_consumption, x="Material", y="Consumption (t/hr)",
+                               title="📉 Live Material Consumption",
+                               color="Consumption (t/hr)", color_continuous_scale="viridis")
+        st.plotly_chart(fig_consumption, width="stretch")
+    
+    # Real-time alerts section
+    st.markdown("### 🚨 Real-Time System Alerts")
+    
+    alert_col1, alert_col2 = st.columns(2)
+    
+    with alert_col1:
+        # Live material alerts
+        try:
+            from utils.material_tracking import get_low_stock_alerts
+            alerts = get_low_stock_alerts()
+            
+            if alerts:
+                st.markdown("#### 📦 **Material Alerts**")
+                for alert in alerts[:3]:  # Show top 3
+                    alert_type = "🔴" if alert.alert_type == "critical" else "🟡"
+                    st.warning(f"{alert_type} {alert.alert_message}")
+            else:
+                st.success("✅ All material stocks are adequate")
+        except Exception as e:
+            st.info("🔄 Material alerts loading...")
+    
+    with alert_col2:
+        # Live quality alerts  
+        st.markdown("#### ⚠️ **Quality Status**")
+        
+        quality_alerts = []
+        
+        # Generate dynamic quality alerts based on live data
+        if quality_rate < 98:
+            quality_alerts.append(f"🟡 Quality rate below target: {quality_rate:.1f}%")
+        
+        if furnace_temp > 1690:
+            quality_alerts.append(f"🔴 Furnace temperature high: {furnace_temp}°C")
+        elif furnace_temp < 1640:
+            quality_alerts.append(f"🟡 Furnace temperature low: {furnace_temp}°C")
+        
+        if production_rate < 90:
+            quality_alerts.append(f"🔴 Production efficiency low: {production_rate:.1f}%")
+        
+        if quality_alerts:
+            for alert in quality_alerts:
+                if "🔴" in alert:
+                    st.error(alert)
+                else:
+                    st.warning(alert)
+        else:
+            st.success("✅ All quality parameters normal")
+    
+    # Live update timestamp
+    st.markdown("---")
+    st.info(f"🔄 **Live Data** | Last Update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Updates automatically every 60 seconds | Total Simulation Updates: {total_updates}")
     
     with col2:
         st.markdown("""
@@ -637,7 +991,7 @@ def show_plant_overview():
         )
         fig.update_xaxes(gridcolor='rgba(102, 126, 234, 0.2)')
         fig.update_yaxes(gridcolor='rgba(102, 126, 234, 0.2)')
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
     
     with col2:
         # Enhanced production unit efficiency with gradient bars
@@ -670,7 +1024,7 @@ def show_plant_overview():
         )
         fig.update_xaxes(gridcolor='rgba(102, 126, 234, 0.2)')
         fig.update_yaxes(gridcolor='rgba(102, 126, 234, 0.2)')
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
     
     # Additional insights section
     st.markdown("---")
@@ -716,65 +1070,49 @@ def show_plant_overview():
 
 def show_energy_management():
     """Energy management module"""
-    st.markdown("## ⚡ BSP Energy Management System")
+    st.markdown("## ⚡ Energy Management")
+    st.info("🔧 Energy management module - Advanced power optimization features coming soon!")
     
-    tab1, tab2, tab3 = st.tabs(["🔋 Power Generation", "🏭 Plant Consumption", "💡 Efficiency Analytics"])
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Power Consumption", "245 MW", delta="-5 MW")
+        st.metric("Energy Efficiency", "94.2%", delta="+1.2%")
     
-    with tab1:
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Total Generation", "850 MW", "+25 MW")
-        with col2:
-            st.metric("Self Consumption", "780 MW", "-15 MW")  
-        with col3:
-            st.metric("Grid Export", "70 MW", "+40 MW")
-        
-        # Power generation trend
-        hours = list(range(24))
-        power_gen = [820 + 30*np.sin(h*0.3) + np.random.normal(0, 10) for h in hours]
-        
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=hours, y=power_gen, mode='lines', fill='tonexty', name='Generation'))
-        fig.update_layout(title="Power Generation - Last 24 Hours", height=300)
-        st.plotly_chart(fig, use_container_width=True)
+    with col2:
+        st.metric("Cost Savings", "₹2.3 Cr", delta="+15%")
+        st.metric("Carbon Footprint", "1,247 tons CO2", delta="-8%")
 
 def show_safety_environment():
-    """Safety and environmental module"""
-    st.markdown("## 🛡️ Safety & Environmental Compliance")
+    """Safety and environment module"""
+    st.markdown("## 🛡️ Safety & Environment")
+    st.info("🔧 Safety & Environment module - Comprehensive monitoring features coming soon!")
     
-    tab1, tab2 = st.tabs(["🏥 Safety Metrics", "🌍 Environmental Data"])
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Safety Score", "99.8%", delta="▲ Excellent")
+        st.metric("Incident-Free Days", "851", delta="+1")
     
-    with tab1:
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Safety Score", "9.8/10")
-        with col2:
-            st.metric("Incident-Free Days", "847")
-        with col3:
-            st.metric("Training Completion", "98.5%")
+    with col2:
+        st.metric("Air Quality Index", "Good", delta="Normal")
+        st.metric("Water Treatment", "98.5%", delta="+0.3%")
+    
+    with col3:
+        st.metric("Waste Reduction", "87%", delta="+5%")
+        st.metric("Compliance Score", "100%", delta="Perfect")
 
 def show_ai_analytics():
-    """AI analytics module"""
-    st.markdown("## 🤖 AI-Powered Analytics")
+    """AI Analytics module"""
+    st.markdown("## 🤖 AI Analytics")
+    st.info("🔧 AI Analytics module - Machine learning insights coming soon!")
     
-    st.info("🔮 Predictive models analyzing 10,000+ data points every minute")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Predictive Accuracy", "96.7%", delta="▲ High")
+        st.metric("Cost Optimization", "₹15.2 Cr", delta="+22%")
     
-    # Equipment health prediction
-    equipment = ['Blast Furnace', 'SMS Converter', 'Rolling Mill', 'Coke Oven']
-    health_scores = [95, 87, 76, 92]
-    
-    fig = go.Figure(data=go.Bar(
-        x=equipment,
-        y=health_scores,
-        marker_color=['green' if s > 90 else 'orange' if s > 75 else 'red' for s in health_scores]
-    ))
-    fig.update_layout(title="🔧 Equipment Health Prediction", height=300)
-    st.plotly_chart(fig, use_container_width=True)
-
-def show_emergency_alert():
-    """Show emergency alert"""
-    st.error("🚨 Emergency Alert System Activated")
-    st.warning("⚠️ All department heads have been notified")
+    with col2:
+        st.metric("Anomaly Detection", "Active", delta="98.9% accuracy")
+        st.metric("Forecast Reliability", "94.1%", delta="+2.3%")
 
 if __name__ == "__main__":
     main()
