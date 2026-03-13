@@ -3,12 +3,11 @@ services:
     name: steel-manufacturing-system-python
     env: python
     plan: free
-    runtime: python-3.9
     buildCommand: |
       echo "Building Python application..."
       pip install --upgrade pip setuptools wheel
-      pip install -r requirements-deploy.txt
-      echo "Build complete - no Docker!"
+      pip install -r requirements.txt
+      echo "Build complete"
     startCommand: |
       echo "Starting Python application..."
       streamlit run app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true
