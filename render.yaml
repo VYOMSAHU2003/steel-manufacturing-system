@@ -6,7 +6,7 @@ services:
     buildCommand: |
       echo "Building Python application..."
       pip install --upgrade pip setuptools wheel
-      pip install -r requirements.txt
+      pip install -r requirements-render.txt
       echo "Build complete"
     startCommand: |
       echo "Starting Python application..."
